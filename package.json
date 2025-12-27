@@ -4,8 +4,7 @@
   "type": "module",
   "types": "dist/web-components.d.ts",
   "exports": {
-    "./package.json": "./package.json",
-    ".": "./dist/web-components.js"
+    "./datagrid": "./dist/datagrid.js"
   },
   "files": [
     "dist/**/*"
