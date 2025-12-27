@@ -1,0 +1,43 @@
+{
+  "name": "@chronocide/web-components",
+  "version": "0.0.1",
+  "type": "module",
+  "types": "dist/web-components.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/web-components.js"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "engines": {
+    "node": ">=24.11.1"
+  },
+  "author": "Chronocide",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "test": "node --test src/**/*.spec.ts",
+    "build": "rollup -c",
+    "preversion": "npm run test",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
+  },
+  "optionalDependencies": {
+    "@chronocide/eslint-config": "github:chronoDave/eslint-config",
+    "eslint": "^9.28.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.15.29",
+    "esbuild": "^0.25.5",
+    "jsdom": "^26.1.0",
+    "rollup": "^4.42.0",
+    "rollup-plugin-dts": "^6.2.1",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@chronocide/hyper": "^0.3.2"
+  }
+}
