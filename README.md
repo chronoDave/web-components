@@ -7,8 +7,8 @@
   <a href="/LICENSE">
     <img alt="License AGPLv3" src="https://img.shields.io/badge/license-AGPLv3-blue.svg" />
   </a>
-  <a href="https://www.npmjs.com/package/@chronocide/datatable">
-    <img alt="NPM" src="https://img.shields.io/npm/v/@chronocide/datatable?label=npm">
+  <a href="https://www.npmjs.com/package/@chronocide/web-components">
+    <img alt="NPM" src="https://img.shields.io/npm/v/@chronocide/web-components?label=npm">
   </a>
 </div>
 
