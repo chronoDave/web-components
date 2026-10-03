@@ -1,5 +1,5 @@
 // src/components/datagrid/datagrid.ts
-import h4 from "@chronocide/dom";
+import h2 from "@chronocide/dom";
 
 // src/lib/is.ts
 var number = (x) => {
@@ -14,14 +14,7 @@ var maybe = (fn) => (x) => {
 };
 
 // src/lib/dom.ts
-import h from "@chronocide/dom";
 var childIndex = (child) => Array.from(child.parentElement?.children ?? []).indexOf(child);
-var wrap = (root) => {
-  const wrapper = h("div")()();
-  root.parentElement?.insertBefore(wrapper, root);
-  wrapper.appendChild(root);
-  return wrapper;
-};
 
 // src/lib/components/icon.ts
 import { svg } from "@chronocide/dom";
@@ -61,40 +54,83 @@ var magnifyingGlass = icon({
   d: "M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
 });
 
-// src/lib/components/button-icon.ts
-import h2 from "@chronocide/dom";
-var button_icon_default = (icon2) => (id) => (label) => h2("button")({
-  "type": "button",
-  "aria-controls": id
-})(icon2, h2("span")({ class: "sr-only" })(label));
+// src/lib/element.ts
+var HTMLAbstractElement = class extends HTMLElement {
+  #children;
+  #initialised;
+  #observer;
+  constructor(options) {
+    super();
+    this.#initialised = false;
+    this.#children = options?.children ?? false;
+  }
+  _init() {
+    if (this.#initialised) return;
+    this.#observer?.disconnect();
+    this.#initialised = true;
+  }
+  connectedCallback() {
+    if (this.#initialised || this.#observer) return;
+    if (this.childElementCount === 0 && this.#children) {
+      this.#observer = new MutationObserver(() => this._init());
+      this.#observer.observe(this, { childList: true });
+      return;
+    }
+    this._init();
+  }
+};
 
 // src/components/datagrid/components/toolbar.ts
-import h3 from "@chronocide/dom";
-var view = (id) => (values) => h3("fieldset")({ name: "view" })(
-  h3("label")({ for: `${id}-view` })("Show entries"),
-  h3("select")({ id: `${id}-view` })(
-    h3("option")({ value: 0 })("All"),
-    ...values.map((value) => h3("option")({ value })(`${value}`))
+import h from "@chronocide/dom";
+var view = (id) => (values) => h("fieldset")({ name: "view" })(
+  h("label")({ for: `${id}-view` })("Show entries"),
+  h("select")({ id: `${id}-view` })(
+    h("option")({ value: 0 })("All"),
+    ...values.map((value) => h("option")({ value })(`${value}`))
   )
 );
-var search = (id) => h3("fieldset")({ name: "search" })(
-  h3("label")({ for: `${id}-search` })("Search"),
-  h3("input")({ id: `${id}-search`, type: "search" })(),
-  h3("button")({ type: "submit" })("Search")
+var search = (id) => h("fieldset")({ name: "search" })(
+  h("label")({ for: `${id}-search` })("Search"),
+  h("input")({ id: `${id}-search`, type: "search" })(),
+  h("button")({ type: "submit" })("Search")
 );
-var toolbar_default = (id, options) => h3("div")({
-  "role": "toolbar",
-  "aria-label": "Table actions",
-  "hidden": (options?.views ?? []).length === 0 && !options?.search
-})(
-  view(id)(options?.views ?? []),
-  search(id)
+var output = (id) => h("output")({
+  "aria-live": "polite",
+  "hidden": true,
+  "for": `${id}-view ${id}-search`
+})();
+var navigation = (id) => h("nav")({ "aria-label": "Pagination" })(
+  h("button")({
+    "type": "button",
+    "aria-controls": id,
+    "data-action": "previous"
+  })("Previous"),
+  h("button")({
+    "type": "button",
+    "aria-controls": id,
+    "data-action": "next"
+  })("Next")
 );
+var toolbar_default = (options) => {
+  const hidden = (options.views ?? []).length === 0 && !options.search;
+  return h("div")({
+    "role": "toolbar",
+    "aria-label": "Table actions",
+    hidden
+  })(
+    view(options.id.root)(options.views ?? []),
+    search(options.id.root),
+    navigation(options.id.body),
+    output(options.id.root)
+  );
+};
 
 // src/components/datagrid/datagrid.ts
-var HTMLDatagridElement = class extends HTMLElement {
+var HTMLDatagridElement = class extends HTMLAbstractElement {
   static observedAttributes = ["data-index"];
-  #initialised;
+  constructor() {
+    super({ children: true });
+  }
   /** Get active table cell */
   get #active() {
     const rows = this.querySelectorAll("tr:not([hidden])");
@@ -133,7 +169,7 @@ var HTMLDatagridElement = class extends HTMLElement {
       const hidden = max === 0 ? false : i2 < min || i2 >= max;
       tr.toggleAttribute("hidden", hidden);
     });
-    const status = this.querySelector(".status");
+    const status = this.querySelector('[role="toolbar"] output');
     if (status) status.textContent = `Showing ${min + 1} to ${Math.min(max, rows.length)} of ${rows.length} entries`;
   }
   #search(query) {
@@ -173,17 +209,13 @@ var HTMLDatagridElement = class extends HTMLElement {
     const tbody = this.querySelector("tbody");
     tbody?.replaceChildren(...rows);
   }
-  constructor() {
-    super();
-    this.#initialised = false;
-  }
-  connectedCallback() {
-    if (this.#initialised) return;
-    this.#initialised = true;
-    if (this.id === "") this.id = crypto.randomUUID();
+  _init() {
+    super._init();
+    this.id ||= crypto.randomUUID();
     const rows = this.querySelectorAll("tr");
     rows.forEach((tr, i) => tr.setAttribute("aria-rowindex", `${i + 1}`));
     const table = this.querySelector("table");
+    console.log(table, this.children);
     table?.setAttribute("role", "grid");
     table?.setAttribute("aria-rowcount", `${rows.length + 1}`);
     if (table?.getAttribute("aria-label") === null) table.setAttribute("aria-labelledby", `${this.id}-label`);
@@ -194,7 +226,7 @@ var HTMLDatagridElement = class extends HTMLElement {
       th.setAttribute("aria-sort", "none");
       const cells2 = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
       th.setAttribute("data-type", cells2.some((cell) => maybe(number)(cell.textContent)) ? "number" : "string");
-      th.replaceChildren(h4("button")({
+      th.replaceChildren(h2("button")({
         "type": "button",
         "data-action": "sort",
         "tabindex": i === 0 ? "0" : "-1"
@@ -220,9 +252,6 @@ var HTMLDatagridElement = class extends HTMLElement {
         }
       }
     }, { passive: true });
-    const wrapper = maybe(wrap)(table);
-    wrapper?.classList.add("datagrid");
-    if (wrapper) this.append(wrapper);
     const createFocus = (event) => (cell) => {
       const root = cell.querySelector("[tabindex]") ?? cell;
       event.preventDefault();
@@ -267,15 +296,15 @@ var HTMLDatagridElement = class extends HTMLElement {
         }
       }
     });
-    this.prepend(toolbar_default(this.id, {
+    this.prepend(toolbar_default({
+      id: {
+        root: this.id,
+        body: `${this.id}-body`
+      },
       views: [10, 25, 50],
       search: true
     }));
     this.querySelectorAll("option").item(2).setAttribute("selected", "true");
-    this.#paginate(Math.min(this.#index, this.#max));
-    if (this.querySelector('table [tabindex="0"]')?.closest("tr")?.hidden) {
-      this.querySelector("table th button")?.setAttribute("tabindex", "0");
-    }
     document.getElementById(`${this.id}-view`)?.addEventListener("change", () => {
       this.#paginate(Math.min(this.#index, this.#max));
       if (this.querySelector('table [tabindex="0"]')?.closest("tr")?.hidden) {
@@ -291,18 +320,12 @@ var HTMLDatagridElement = class extends HTMLElement {
       this.#search(inputSearch?.value.toLocaleLowerCase() ?? "");
       this.#index = 0;
     }, { passive: true });
-    const buttonPrevious = button_icon_default(chevronLeft())(`${this.id}-container`)("Previous");
-    buttonPrevious.addEventListener("click", () => {
+    this.querySelector('[role="toolbar"] nav button[data-action="previous"]')?.addEventListener("click", () => {
       this.#index -= 1;
     }, { passive: true });
-    const buttonNext = button_icon_default(chevronRight())(`${this.id}-container`)("Next");
-    buttonNext.addEventListener("click", () => {
+    this.querySelector('[role="toolbar"] nav button[data-action="next"]')?.addEventListener("click", () => {
       this.#index += 1;
     }, { passive: true });
-    this.appendChild(h4("div")({ class: "footer" })(
-      h4("p")({ class: "status" })(),
-      h4("div")({ class: "controls" })(buttonPrevious, buttonNext)
-    ));
     this.#paginate(0);
   }
   attributeChangedCallback(attribute) {

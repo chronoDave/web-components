@@ -7,8 +7,7 @@ import * as event from '../../test/event.ts';
 import struct from '../../test/component.ts';
 
 test('datagrid', async (t: TestContext) => {
-  const dom = await struct(new URL('datagrid.struct.html', import.meta.url));
-  const { window, document } = await dom();
+  const { window, document } = await struct(import.meta.dirname)('datagrid');
 
   /** @see https://www.w3.org/WAI/ARIA/apg/patterns/grid/#wai-ariaroles,states,andproperties */
   t.test('html', () => {

@@ -2,34 +2,37 @@ import fsp from 'fs/promises';
 import path from 'path';
 import esbuild from 'esbuild';
 import { JSDOM } from 'jsdom';
-import { fileURLToPath } from 'url';
 
-/**
- * Create JSDOM context and initialize Web Component.
-*/
-export default async (file: URL) => {
-  const name = path.parse(fileURLToPath(file)).name.replace('.struct', '');
-  const [bundle, struct] = await Promise.all([
-    esbuild.build({
-      entryPoints: [`src/components/${name}/${name}.ts`],
-      outdir: 'tmp',
-      platform: 'browser',
-      format: 'iife',
-      globalName: 'components',
-      bundle: true,
-      write: false
-    }),
-    fsp.readFile(file, 'utf-8')
-  ]);
+/** Create JSDOM and initialize web component */
+export const dom = async (file: string) => {
+  const { name } = path.parse(file);
+  const { outputFiles: [{ text }] } = await esbuild.build({
+    entryPoints: [file],
+    outdir: 'tmp',
+    platform: 'browser',
+    format: 'iife',
+    globalName: 'components',
+    bundle: true,
+    write: false
+  });
 
   const id = `chrono-${name}`;
-  const element = `HTML${name[0].toUpperCase()}${name.slice(1)}Element`;
-  const html = `${struct}<script>${bundle.outputFiles[0].text};customElements.define("${id}", components.${element})</script>`;
+  const script = `<script>${text};customElements.define("${id}", components.HTML${name[0].toUpperCase()}${name.slice(1)}Element)</script>`;
 
-  return async () => {
-    const dom = new JSDOM(html, { runScripts: 'dangerously' });
+  return async (html: string) => {
+    const dom = new JSDOM(`${html}${script}`, { runScripts: 'dangerously' });
     await dom.window.customElements.whenDefined(id);
 
     return { window: dom.window, document: dom.window.document };
   };
 };
+
+export default (dir: string) =>
+  async (name: string) => {
+    const [struct, html] = await Promise.all([
+      dom(path.join(dir, `${name}.ts`)),
+      fsp.readFile(path.join(dir, `${name}.struct.html`), 'utf-8')
+    ]);
+
+    return struct(html);
+  };

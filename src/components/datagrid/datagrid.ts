@@ -2,8 +2,9 @@ import h from '@chronocide/dom';
 
 import * as is from '../../lib/is.ts';
 import { maybe } from '../../lib/fn.ts';
-import { childIndex, wrap } from '../../lib/dom.ts';
+import { childIndex } from '../../lib/dom.ts';
 import * as icon from '../../lib/components/icon.ts';
+import HTMLAbstractElement from '../../lib/element.ts';
 
 import toolbar from './components/toolbar.ts';
 
@@ -14,10 +15,12 @@ type Cell = {
   y: number;
 };
 
-export class HTMLDatagridElement extends HTMLElement {
+export class HTMLDatagridElement extends HTMLAbstractElement {
   static observedAttributes = ['data-index'];
 
-  #initialised: boolean;
+  constructor() {
+    super({ children: true });
+  }
 
   /** Get active table cell */
   get #active(): Cell {
@@ -127,29 +130,25 @@ export class HTMLDatagridElement extends HTMLElement {
     tbody?.replaceChildren(...rows);
   }
 
-  constructor() {
-    super();
+  protected _init() {
+    super._init();
 
-    this.#initialised = false;
-  }
-
-  connectedCallback() {
     /**
      * `connectedCallback` gets called every time the element is moved
      * and does not act like a constructor.
      * 
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements#lifecycle_callbacks_and_state-preserving_moves
      */
-    if (this.#initialised) return;
-    this.#initialised = true;
-
-    if (this.id === '') this.id = crypto.randomUUID();
-
+    this.id ||= crypto.randomUUID();
+  
     // Attributes
     const rows = this.querySelectorAll('tr');
     rows.forEach((tr, i) => tr.setAttribute('aria-rowindex', `${i + 1}`));
 
     const table = this.querySelector('table');
+
+    console.log(table, this.children);
+
     table?.setAttribute('role', 'grid');
     table?.setAttribute('aria-rowcount', `${rows.length + 1}`);
     if (table?.getAttribute('aria-label') === null) table.setAttribute('aria-labelledby', `${this.id}-label`);
@@ -195,11 +194,6 @@ export class HTMLDatagridElement extends HTMLElement {
         }
       }
     }, { passive: true });
-
-    // Wrap
-    const wrapper = maybe(wrap)(table);
-    wrapper?.classList.add('datagrid');
-    if (wrapper) this.append(wrapper);
 
     // Keyboard controls
     const createFocus = (event: KeyboardEvent) =>
