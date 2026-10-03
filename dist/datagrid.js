@@ -1,38 +1,58 @@
-const maybe$1 = (fn) => (x) => {
+// src/lib/env.ts
+var Env = class {
+  #document;
+  #window;
+  get document() {
+    if (!this.#document) throw new Error("Missing document");
+    return this.#document;
+  }
+  set document(document2) {
+    this.#document = document2;
+  }
+  get window() {
+    if (!this.#window) throw new Error("Missing window");
+    return this.#window;
+  }
+  set window(window2) {
+    this.#window = window2;
+  }
+  constructor() {
+    this.#document = typeof document === "undefined" ? null : document;
+    this.#window = typeof window === "undefined" ? null : window;
+  }
+};
+
+// src/lib/fn.ts
+var maybe$1 = (fn) => (x) => {
   if (x === null || x === void 0) return null;
   return fn(x);
 };
 
-const setAttributes = (element) => (attributes) => Object.entries(attributes).forEach(([k, v]) => {
+// src/lib/element.ts
+var set = (element) => (attributes) => Object.entries(attributes).forEach(([k, v]) => {
   if (typeof v === "string") element.setAttribute(k, v);
   if (typeof v === "number") element.setAttribute(k, `${v}`);
   if (v === true) element.toggleAttribute(k, v);
 });
-const create = (element) => (attributes) => (children) => {
-  maybe$1(setAttributes(element))(attributes);
+var style = (element) => (style3) => Object.entries(style3).forEach(([k, v]) => {
+  element.style.setProperty(k, v);
+});
+var create = (element) => (attributes) => (...children) => {
+  maybe$1(set(element))(attributes);
   element.append(...children);
   return element;
 };
-const html = (document) => (tag) => (attributes) => (...children) => create(document.createElement(tag))(attributes)(children);
-const svg$1 = (document) => (tag) => (attributes) => (...children) => create(document.createElementNS("http://www.w3.org/2000/svg", tag))(attributes)(children);
+var html = (env2) => (tag) => (attributes) => (...children) => {
+  const root = create(env2.document.createElement(tag))(attributes)(...children);
+  maybe$1(style(root))(attributes?.style);
+  return root;
+};
+var svg = (env2) => (tag) => create(env2.document.createElementNS("http://www.w3.org/2000/svg", tag));
 
-class Env {
-  _document;
-  get document() {
-    if (!this._document) throw new Error("Missing document");
-    return this._document;
-  }
-  set document(document2) {
-    this._document = document2;
-  }
-  constructor() {
-    this._document = typeof document === "undefined" ? null : document;
-  }
-}
-
-const env = new Env();
-var hyper = (tag) => html(env.document)(tag);
-const svg = (tag) => svg$1(env.document)(tag);
+// src/dom.ts
+var env = new Env();
+var dom_default = html(env);
+var svg2 = svg(env);
 
 const uid = /* @__PURE__ */ (() => {
   let n = 0;
@@ -51,13 +71,13 @@ const maybe = (fn) => (x) => {
 
 const childIndex = (child) => Array.from(child.parentElement?.children ?? []).indexOf(child);
 const wrap = (root) => {
-  const wrapper = hyper("div")()();
+  const wrapper = dom_default("div")()();
   root.parentElement?.insertBefore(wrapper, root);
   wrapper.appendChild(root);
   return wrapper;
 };
 
-const icon = (attributes) => (state) => svg("svg")({
+const icon = (attributes) => (state) => svg2("svg")({
   "xmlns": "http://www.w3.org/2000/svg",
   "class": "icon",
   "viewBox": attributes.viewbox,
@@ -66,7 +86,7 @@ const icon = (attributes) => (state) => svg("svg")({
   "height": 16,
   "aria-hidden": "true",
   "data-icon": attributes.id
-})(svg("path")({ d: attributes.d })());
+})(svg2("path")({ d: attributes.d })());
 const chevronLeft = icon({
   id: "chevron-left",
   viewbox: "0 0 320 512",
@@ -93,10 +113,10 @@ const magnifyingGlass = icon({
   d: "M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
 });
 
-var buttonIcon = (icon) => (id) => (label) => hyper("button")({
+var buttonIcon = (icon) => (id) => (label) => dom_default("button")({
   "type": "button",
   "aria-controls": id
-})(icon, hyper("span")({ class: "sr-only" })(label));
+})(icon, dom_default("span")({ class: "sr-only" })(label));
 
 class HTMLDatagridElement extends HTMLElement {
   static observedAttributes = ["data-index"];
@@ -200,7 +220,7 @@ class HTMLDatagridElement extends HTMLElement {
       th.setAttribute("aria-sort", "none");
       const cells2 = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
       th.setAttribute("data-type", cells2.some((cell) => maybe(number)(cell.textContent)) ? "number" : "string");
-      th.replaceChildren(hyper("button")({
+      th.replaceChildren(dom_default("button")({
         "type": "button",
         "data-action": "sort",
         "tabindex": i === 0 ? "0" : "-1"
@@ -273,7 +293,7 @@ class HTMLDatagridElement extends HTMLElement {
         }
       }
     });
-    const inputSearch = hyper("input")({ type: "search", id: `${this.id}-search` })();
+    const inputSearch = dom_default("input")({ type: "search", id: `${this.id}-search` })();
     const buttonSearch = buttonIcon(magnifyingGlass())(`${this.id}-search`)("Search");
     const search = () => {
       this._search(inputSearch.value.toLocaleLowerCase());
@@ -281,11 +301,11 @@ class HTMLDatagridElement extends HTMLElement {
     };
     inputSearch.addEventListener("change", search, { passive: true });
     buttonSearch.addEventListener("click", search, { passive: true });
-    const selectView = hyper("select")({ id: `${this.id}-view` })(
-      hyper("option")({ value: 10 })("10"),
-      hyper("option")({ value: 25, selected: true })("25"),
-      hyper("option")({ value: 50 })("50"),
-      hyper("option")({ value: 0 })("All")
+    const selectView = dom_default("select")({ id: `${this.id}-view` })(
+      dom_default("option")({ value: 10 })("10"),
+      dom_default("option")({ value: 25, selected: true })("25"),
+      dom_default("option")({ value: 50 })("50"),
+      dom_default("option")({ value: 0 })("All")
     );
     selectView.addEventListener("change", () => {
       this._paginate(Math.min(this._index, this._max));
@@ -293,13 +313,13 @@ class HTMLDatagridElement extends HTMLElement {
         this.querySelector("table th button")?.setAttribute("tabindex", "0");
       }
     }, { passive: true });
-    this.prepend(hyper("div")({ class: "toolbar" })(
-      hyper("div")({ class: "view" })(
-        hyper("label")({ for: `${this.id}-view` })("Show entries"),
+    this.prepend(dom_default("div")({ class: "toolbar" })(
+      dom_default("div")({ class: "view" })(
+        dom_default("label")({ for: `${this.id}-view` })("Show entries"),
         selectView
       ),
-      hyper("div")({ class: "search" })(
-        hyper("label")({ for: `${this.id}-search` })("Search"),
+      dom_default("div")({ class: "search" })(
+        dom_default("label")({ for: `${this.id}-search` })("Search"),
         inputSearch,
         buttonSearch
       )
@@ -312,9 +332,9 @@ class HTMLDatagridElement extends HTMLElement {
     buttonNext.addEventListener("click", () => {
       this._index += 1;
     }, { passive: true });
-    this.appendChild(hyper("div")({ class: "footer" })(
-      hyper("p")({ class: "status" })(),
-      hyper("div")({ class: "controls" })(buttonPrevious, buttonNext)
+    this.appendChild(dom_default("div")({ class: "footer" })(
+      dom_default("p")({ class: "status" })(),
+      dom_default("div")({ class: "controls" })(buttonPrevious, buttonNext)
     ));
     this._paginate(0);
   }
