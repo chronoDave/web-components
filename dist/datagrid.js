@@ -1,5 +1,5 @@
 // src/components/datagrid/datagrid.ts
-import h3 from "@chronocide/dom";
+import h4 from "@chronocide/dom";
 
 // src/lib/is.ts
 var number = (x) => {
@@ -67,6 +67,29 @@ var button_icon_default = (icon2) => (id) => (label) => h2("button")({
   "type": "button",
   "aria-controls": id
 })(icon2, h2("span")({ class: "sr-only" })(label));
+
+// src/components/datagrid/components/toolbar.ts
+import h3 from "@chronocide/dom";
+var view = (id) => (values) => h3("fieldset")({ name: "view" })(
+  h3("label")({ for: `${id}-view` })("Show entries"),
+  h3("select")({ id: `${id}-view` })(
+    h3("option")({ value: 0 })("All"),
+    ...values.map((value) => h3("option")({ value })(`${value}`))
+  )
+);
+var search = (id) => h3("fieldset")({ name: "search" })(
+  h3("label")({ for: `${id}-search` })("Search"),
+  h3("input")({ id: `${id}-search`, type: "search" })(),
+  h3("button")({ type: "submit" })("Search")
+);
+var toolbar_default = (id, options) => h3("div")({
+  "role": "toolbar",
+  "aria-label": "Table actions",
+  "hidden": (options?.views ?? []).length === 0 && !options?.search
+})(
+  view(id)(options?.views ?? []),
+  search(id)
+);
 
 // src/components/datagrid/datagrid.ts
 var HTMLDatagridElement = class extends HTMLElement {
@@ -171,7 +194,7 @@ var HTMLDatagridElement = class extends HTMLElement {
       th.setAttribute("aria-sort", "none");
       const cells2 = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
       th.setAttribute("data-type", cells2.some((cell) => maybe(number)(cell.textContent)) ? "number" : "string");
-      th.replaceChildren(h3("button")({
+      th.replaceChildren(h4("button")({
         "type": "button",
         "data-action": "sort",
         "tabindex": i === 0 ? "0" : "-1"
@@ -244,37 +267,30 @@ var HTMLDatagridElement = class extends HTMLElement {
         }
       }
     });
-    const inputSearch = h3("input")({ type: "search", id: `${this.id}-search` })();
-    const buttonSearch = button_icon_default(magnifyingGlass())(`${this.id}-search`)("Search");
-    const search = () => {
-      this.#search(inputSearch.value.toLocaleLowerCase());
-      this.#index = 0;
-    };
-    inputSearch.addEventListener("change", search, { passive: true });
-    buttonSearch.addEventListener("click", search, { passive: true });
-    const selectView = h3("select")({ id: `${this.id}-view` })(
-      h3("option")({ value: 10 })("10"),
-      h3("option")({ value: 25, selected: true })("25"),
-      h3("option")({ value: 50 })("50"),
-      h3("option")({ value: 0 })("All")
-    );
-    selectView.addEventListener("change", () => {
+    this.prepend(toolbar_default(this.id, {
+      views: [10, 25, 50],
+      search: true
+    }));
+    this.querySelectorAll("option").item(2).setAttribute("selected", "true");
+    this.#paginate(Math.min(this.#index, this.#max));
+    if (this.querySelector('table [tabindex="0"]')?.closest("tr")?.hidden) {
+      this.querySelector("table th button")?.setAttribute("tabindex", "0");
+    }
+    document.getElementById(`${this.id}-view`)?.addEventListener("change", () => {
       this.#paginate(Math.min(this.#index, this.#max));
       if (this.querySelector('table [tabindex="0"]')?.closest("tr")?.hidden) {
         this.querySelector("table th button")?.setAttribute("tabindex", "0");
       }
     }, { passive: true });
-    this.prepend(h3("div")({ class: "toolbar" })(
-      h3("div")({ class: "view" })(
-        h3("label")({ for: `${this.id}-view` })("Show entries"),
-        selectView
-      ),
-      h3("div")({ class: "search" })(
-        h3("label")({ for: `${this.id}-search` })("Search"),
-        inputSearch,
-        buttonSearch
-      )
-    ));
+    const inputSearch = document.querySelector('[role="toolbar"] [name="search"] input');
+    inputSearch?.addEventListener("change", () => {
+      this.#search(inputSearch.value.toLocaleLowerCase());
+      this.#index = 0;
+    }, { passive: true });
+    document.querySelector('[role="toolbar"] [name="search"] button')?.addEventListener("click", () => {
+      this.#search(inputSearch?.value.toLocaleLowerCase() ?? "");
+      this.#index = 0;
+    }, { passive: true });
     const buttonPrevious = button_icon_default(chevronLeft())(`${this.id}-container`)("Previous");
     buttonPrevious.addEventListener("click", () => {
       this.#index -= 1;
@@ -283,9 +299,9 @@ var HTMLDatagridElement = class extends HTMLElement {
     buttonNext.addEventListener("click", () => {
       this.#index += 1;
     }, { passive: true });
-    this.appendChild(h3("div")({ class: "footer" })(
-      h3("p")({ class: "status" })(),
-      h3("div")({ class: "controls" })(buttonPrevious, buttonNext)
+    this.appendChild(h4("div")({ class: "footer" })(
+      h4("p")({ class: "status" })(),
+      h4("div")({ class: "controls" })(buttonPrevious, buttonNext)
     ));
     this.#paginate(0);
   }

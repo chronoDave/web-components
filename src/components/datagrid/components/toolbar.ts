@@ -1,7 +1,5 @@
 import h from '@chronocide/dom';
 
-import * as icon from '../../../lib/components/icon.ts';
-
 export type ToolbarOptions = {
   views?: number[];
   search?: boolean;
@@ -21,10 +19,7 @@ export const search = (id: string): HTMLFieldSetElement =>
   h('fieldset')({ name: 'search' })(
     h('label')({ for: `${id}-search` })('Search'),
     h('input')({ id: `${id}-search`, type: 'search' })(),
-    h('button')({ type: 'submit' })(
-      icon.magnifyingGlass(),
-      h('span')({ class: 'sr-only' })('Search')
-    )
+    h('button')({ type: 'submit' })('Search')
   );
 
 export default (id: string, options?: ToolbarOptions): HTMLElement =>

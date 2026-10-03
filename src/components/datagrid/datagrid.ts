@@ -24,12 +24,12 @@ export class HTMLDatagridElement extends HTMLElement {
   get #active(): Cell {
     const rows = this.querySelectorAll('tr:not([hidden])');
     const row = document.activeElement?.closest('tr') ?? null;
-    const col = 
+    const col =
       document.activeElement?.closest('td') ?? // Link
       document.activeElement?.closest('th') ?? // Button
       document.activeElement; // Cell
     const x = maybe(childIndex)(col) ?? 0;
-    const y = row ? 
+    const y = row ?
       Math.max(0, Array.from(rows).indexOf(row)) :
       0;
 
@@ -39,7 +39,7 @@ export class HTMLDatagridElement extends HTMLElement {
   /** Get view size (visible rows) */
   get #view() {
     const select = document.getElementById(`${this.id}-view`) as HTMLSelectElement | null;
-    
+
     return +(select?.value ?? 0);
   }
 
@@ -145,11 +145,11 @@ export class HTMLDatagridElement extends HTMLElement {
     this.#initialised = true;
 
     if (this.id === '') this.id = crypto.randomUUID();
-    
+
     // Attributes
     const rows = this.querySelectorAll('tr');
     rows.forEach((tr, i) => tr.setAttribute('aria-rowindex', `${i + 1}`));
-    
+
     const table = this.querySelector('table');
     table?.setAttribute('role', 'grid');
     table?.setAttribute('aria-rowcount', `${rows.length + 1}`);
