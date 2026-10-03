@@ -43,7 +43,7 @@ const component = async (name: string) => {
     '<head>',
     '<meta charset="utf-8"></meta>',
     '<meta name="viewport" content="width=device-width,initial-scale=1"></meta>',
-    `<title>${name} - @chronocide/web-components</title>`,
+    `<title>${element} - @chronocide/web-components</title>`,
     `<script defer>${result.outputFiles[0].text};customElements.define("chrono-${name}", components.${element})</script>`,
     '</head>',
     '<body>',

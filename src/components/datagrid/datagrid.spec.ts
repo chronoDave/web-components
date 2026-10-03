@@ -157,6 +157,6 @@ test('datagrid', async (t: TestContext) => {
       25,
       'filters'
     );
-    t.assert.ok(document.querySelector('.status')?.textContent.includes('35'), 'total');
+    t.assert.ok(document.querySelector('[role="toolbar"] output')?.textContent.includes('35'), 'total');
   });
 });

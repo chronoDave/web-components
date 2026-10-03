@@ -4,7 +4,6 @@ import * as is from '../../lib/is.ts';
 import { maybe } from '../../lib/fn.ts';
 import { childIndex, wrap } from '../../lib/dom.ts';
 import * as icon from '../../lib/components/icon.ts';
-import buttonIcon from '../../lib/components/button-icon.ts';
 
 import toolbar from './components/toolbar.ts';
 
@@ -73,7 +72,7 @@ export class HTMLDatagridElement extends HTMLElement {
       tr.toggleAttribute('hidden', hidden);
     });
 
-    const status = this.querySelector<HTMLParagraphElement>('.status');
+    const status = this.querySelector('[role="toolbar"] output');
     if (status) status.textContent = `Showing ${min + 1} to ${Math.min(max, rows.length)} of ${rows.length} entries`;
   }
 
@@ -291,7 +290,11 @@ export class HTMLDatagridElement extends HTMLElement {
       }
     });
 
-    this.prepend(toolbar(this.id, {
+    this.prepend(toolbar({
+      id: {
+        root: this.id,
+        body: `${this.id}-body`
+      },
       views: [10, 25, 50],
       search: true
     }));
@@ -316,20 +319,13 @@ export class HTMLDatagridElement extends HTMLElement {
     }, { passive: true });
 
     // Pagination
-    const buttonPrevious = buttonIcon(icon.chevronLeft())(`${this.id}-container`)('Previous');
-    buttonPrevious.addEventListener('click', () => {
+    this.querySelector('[role="toolbar"] nav button[data-action="previous"]')?.addEventListener('click', () => {
       this.#index -= 1;
     }, { passive: true });
-    const buttonNext = buttonIcon(icon.chevronRight())(`${this.id}-container`)('Next');
-    buttonNext.addEventListener('click', () => {
+
+    this.querySelector('[role="toolbar"] nav button[data-action="next"]')?.addEventListener('click', () => {
       this.#index += 1;
     }, { passive: true });
-
-    // Footer
-    this.appendChild(h('div')({ class: 'footer' })(
-      h('p')({ class: 'status' })(),
-      h('div')({ class: 'controls' })(buttonPrevious, buttonNext)
-    ));
 
     this.#paginate(0);
   }
