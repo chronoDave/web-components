@@ -19,7 +19,6 @@ test('datagrid', async (t: TestContext) => {
     const cells = document.querySelectorAll('[role="grid"] tr td');
     t.assert.ok(cells.length > 0, 'cells');
 
-    t.assert.ok(document.querySelector('[role="grid"][aria-label],[role="grid"][aria-labelledby]'), 'label');
     t.assert.ok(document.querySelector('[role="grid"] th[aria-sort]'), 'aria-sort');
     t.assert.ok(document.querySelector('[role="grid"][aria-rowcount]'), 'aria-rowcount');
     t.assert.ok(document.querySelector('[role="grid"] tr[aria-rowindex]'), 'aria-rowindex');
@@ -117,21 +116,21 @@ test('datagrid', async (t: TestContext) => {
   });
 
   t.test('sort', () => {
-    t.assert.equal(document.querySelectorAll('thead [data-icon]:not([hidden])').length, 0, 'caret hidden');
+    t.assert.equal(document.querySelectorAll('thead [data-sort]:not([hidden])').length, 0, 'caret hidden');
 
     const button = document.querySelector<HTMLButtonElement>('thead button');
     button?.click();
-    t.assert.ok(button?.querySelector('[data-icon="caret-up"]:not([hidden])'), 'caret up');
+    t.assert.ok(button?.querySelector('[data-sort="ascending"]:not([hidden])'), 'sort ascending');
     button?.click();
-    t.assert.ok(button?.querySelector('[data-icon="caret-down"]:not([hidden])'), 'caret down');
+    t.assert.ok(button?.querySelector('[data-sort="descending"]:not([hidden])'), 'sort descending');
     button?.click();
-    t.assert.ok(button?.querySelector('[data-icon="caret-up"]:not([hidden])'), 'caret up');
+    t.assert.ok(button?.querySelector('[data-sort="ascending"]:not([hidden])'), 'sort ascending');
 
     const buttons = document.querySelectorAll<HTMLButtonElement>('thead button');
     buttons.item(0).click();
     buttons.item(3).click();
-    t.assert.equal(document.querySelectorAll('thead [data-icon]:not([hidden])').length, 1, 'has caret');
-    t.assert.ok(buttons.item(3).querySelector('[data-icon="caret-up"]:not([hidden])'), 'caret column');
+    t.assert.equal(document.querySelectorAll('thead [data-sort]:not([hidden])').length, 1, 'has caret');
+    t.assert.ok(buttons.item(3).querySelector('[data-sort="ascending"]:not([hidden])'), 'caret column');
 
     document.querySelector<HTMLButtonElement>('[data-type="string"] [data-action="sort"]')?.click();
     t.assert.equal(document.querySelector('td')?.textContent, 'Aachen', 'a-z');

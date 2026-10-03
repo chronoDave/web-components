@@ -1,6 +1,3 @@
-// src/components/datagrid/datagrid.ts
-import h2 from "@chronocide/dom";
-
 // src/lib/is.ts
 var number = (x) => {
   if (x.length === 0) return false;
@@ -15,44 +12,6 @@ var maybe = (fn) => (x) => {
 
 // src/lib/dom.ts
 var childIndex = (child) => Array.from(child.parentElement?.children ?? []).indexOf(child);
-
-// src/lib/components/icon.ts
-import { svg } from "@chronocide/dom";
-var icon = (attributes) => (state) => svg("svg")({
-  "xmlns": "http://www.w3.org/2000/svg",
-  "class": "icon",
-  "viewBox": attributes.viewbox,
-  "width": 16,
-  "hidden": state?.hidden,
-  "height": 16,
-  "aria-hidden": "true",
-  "data-icon": attributes.id
-})(svg("path")({ d: attributes.d })());
-var chevronLeft = icon({
-  id: "chevron-left",
-  viewbox: "0 0 320 512",
-  d: "M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"
-});
-var chevronRight = icon({
-  id: "chevron-right",
-  viewbox: "0 0 320 512",
-  d: "M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"
-});
-var caretUp = icon({
-  id: "caret-up",
-  viewbox: "0 0 320 512",
-  d: "M182.6 137.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8l256 0c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-128-128z"
-});
-var caretDown = icon({
-  id: "caret-down",
-  viewbox: "0 0 320 512",
-  d: "M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"
-});
-var magnifyingGlass = icon({
-  id: "magnifying-glass",
-  viewbox: "0 0 512 512",
-  d: "M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
-});
 
 // src/lib/element.ts
 var HTMLAbstractElement = class extends HTMLElement {
@@ -125,6 +84,22 @@ var toolbar_default = (options) => {
   );
 };
 
+// src/components/datagrid/components/th.ts
+import h2 from "@chronocide/dom";
+var th_default = (options) => (th) => {
+  th.setAttribute("aria-sort", "none");
+  th.setAttribute("data-type", options.type);
+  th.replaceChildren(h2("button")({
+    "type": "button",
+    "data-action": "sort",
+    "tabindex": options.tabindex
+  })(
+    h2("span")({ "hidden": true, "data-sort": "ascending" })("\u2191"),
+    h2("span")({ "hidden": true, "data-sort": "descending" })("\u2193"),
+    ...th.childNodes
+  ));
+};
+
 // src/components/datagrid/datagrid.ts
 var HTMLDatagridElement = class extends HTMLAbstractElement {
   static observedAttributes = ["data-index"];
@@ -183,13 +158,13 @@ var HTMLDatagridElement = class extends HTMLAbstractElement {
     const buttons = this.querySelectorAll("th > button");
     buttons.forEach((button) => {
       button.setAttribute("aria-sort", "none");
-      button.querySelectorAll("[data-icon]").forEach((icon2) => icon2.toggleAttribute("hidden", true));
+      button.querySelectorAll("[data-sort]").forEach((icon) => icon.toggleAttribute("hidden", true));
     });
     const cell = this.querySelectorAll("th").item(i);
     const descending = cell.getAttribute("aria-sort") === "descending";
     cell.setAttribute("aria-sort", descending ? "ascending" : "descending");
-    cell.querySelector('[data-icon="caret-up"]')?.toggleAttribute("hidden", descending);
-    cell.querySelector('[data-icon="caret-down"]')?.toggleAttribute("hidden", !descending);
+    cell.querySelector('[data-sort="ascending"]')?.toggleAttribute("hidden", descending);
+    cell.querySelector('[data-sort="descending"]')?.toggleAttribute("hidden", !descending);
     const type = cell.getAttribute("data-type");
     const text = (row) => row.children.item(i)?.textContent ?? "";
     const rows = Array.from(this.querySelectorAll("tbody tr")).sort((a, b) => {
@@ -215,27 +190,14 @@ var HTMLDatagridElement = class extends HTMLAbstractElement {
     const rows = this.querySelectorAll("tr");
     rows.forEach((tr, i) => tr.setAttribute("aria-rowindex", `${i + 1}`));
     const table = this.querySelector("table");
-    console.log(table, this.children);
     table?.setAttribute("role", "grid");
     table?.setAttribute("aria-rowcount", `${rows.length + 1}`);
-    if (table?.getAttribute("aria-label") === null) table.setAttribute("aria-labelledby", `${this.id}-label`);
     const tbody = this.querySelector("tbody");
     tbody?.setAttribute("id", `${this.id}-container`);
-    const ths = this.querySelectorAll("th");
-    ths.forEach((th, i) => {
-      th.setAttribute("aria-sort", "none");
-      const cells2 = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
-      th.setAttribute("data-type", cells2.some((cell) => maybe(number)(cell.textContent)) ? "number" : "string");
-      th.replaceChildren(h2("button")({
-        "type": "button",
-        "data-action": "sort",
-        "tabindex": i === 0 ? "0" : "-1"
-      })(
-        caretUp({ hidden: true }),
-        caretDown({ hidden: true }),
-        ...th.childNodes
-      ));
-    });
+    this.querySelectorAll("th").forEach((cell, i) => th_default({
+      type: Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`)).some((cell2) => maybe(number)(cell2.textContent)) ? "number" : "string",
+      tabindex: i === 0 ? 0 : -1
+    })(cell));
     const cells = this.querySelectorAll("td");
     cells.forEach((td) => {
       (td.querySelector("a") ?? td).setAttribute("tabindex", "-1");

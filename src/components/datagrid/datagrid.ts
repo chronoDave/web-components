@@ -1,12 +1,10 @@
-import h from '@chronocide/dom';
-
 import * as is from '../../lib/is.ts';
 import { maybe } from '../../lib/fn.ts';
 import { childIndex } from '../../lib/dom.ts';
-import * as icon from '../../lib/components/icon.ts';
 import HTMLAbstractElement from '../../lib/element.ts';
 
 import toolbar from './components/toolbar.ts';
+import th from './components/th.ts';
 
 type Cell = {
   row: Element | null;
@@ -93,14 +91,14 @@ export class HTMLDatagridElement extends HTMLAbstractElement {
     const buttons = this.querySelectorAll('th > button');
     buttons.forEach(button => {
       button.setAttribute('aria-sort', 'none');
-      button.querySelectorAll('[data-icon]').forEach(icon => icon.toggleAttribute('hidden', true));
+      button.querySelectorAll('[data-sort]').forEach(icon => icon.toggleAttribute('hidden', true));
     });
 
     const cell = this.querySelectorAll('th').item(i);
     const descending = cell.getAttribute('aria-sort') === 'descending';
     cell.setAttribute('aria-sort', descending ? 'ascending' : 'descending');
-    cell.querySelector('[data-icon="caret-up"]')?.toggleAttribute('hidden', descending);
-    cell.querySelector('[data-icon="caret-down"]')?.toggleAttribute('hidden', !descending);
+    cell.querySelector('[data-sort="ascending"]')?.toggleAttribute('hidden', descending);
+    cell.querySelector('[data-sort="descending"]')?.toggleAttribute('hidden', !descending);
 
     const type = cell.getAttribute('data-type');
     const text = (row: Element) =>
@@ -140,39 +138,25 @@ export class HTMLDatagridElement extends HTMLAbstractElement {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements#lifecycle_callbacks_and_state-preserving_moves
      */
     this.id ||= crypto.randomUUID();
-  
+
     // Attributes
     const rows = this.querySelectorAll('tr');
     rows.forEach((tr, i) => tr.setAttribute('aria-rowindex', `${i + 1}`));
 
     const table = this.querySelector('table');
 
-    console.log(table, this.children);
-
     table?.setAttribute('role', 'grid');
     table?.setAttribute('aria-rowcount', `${rows.length + 1}`);
-    if (table?.getAttribute('aria-label') === null) table.setAttribute('aria-labelledby', `${this.id}-label`);
 
     const tbody = this.querySelector('tbody');
     tbody?.setAttribute('id', `${this.id}-container`);
 
-    const ths = this.querySelectorAll('th');
-    ths.forEach((th, i) => {
-      th.setAttribute('aria-sort', 'none');
-
-      const cells = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
-      th.setAttribute('data-type', cells.some(cell => maybe(is.number)(cell.textContent)) ? 'number' : 'string');
-
-      th.replaceChildren(h('button')({
-        'type': 'button',
-        'data-action': 'sort',
-        'tabindex': i === 0 ? '0' : '-1'
-      })(
-        icon.caretUp({ hidden: true }),
-        icon.caretDown({ hidden: true }),
-        ...th.childNodes
-      ));
-    });
+    this.querySelectorAll('th').forEach((cell, i) => th({
+      type: Array
+        .from(this.querySelectorAll(`td:nth-child(${i + 1})`))
+        .some(cell => maybe(is.number)(cell.textContent)) ? 'number' : 'string',
+      tabindex: i === 0 ? 0 : -1
+    })(cell));
 
     const cells = this.querySelectorAll('td');
     cells.forEach(td => {
