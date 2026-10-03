@@ -1,83 +1,31 @@
-// src/lib/env.ts
-var Env = class {
-  #document;
-  #window;
-  get document() {
-    if (!this.#document) throw new Error("Missing document");
-    return this.#document;
-  }
-  set document(document2) {
-    this.#document = document2;
-  }
-  get window() {
-    if (!this.#window) throw new Error("Missing window");
-    return this.#window;
-  }
-  set window(window2) {
-    this.#window = window2;
-  }
-  constructor() {
-    this.#document = typeof document === "undefined" ? null : document;
-    this.#window = typeof window === "undefined" ? null : window;
-  }
-};
+// src/components/datagrid/datagrid.ts
+import h3 from "@chronocide/dom";
 
-// src/lib/fn.ts
-var maybe$1 = (fn) => (x) => {
-  if (x === null || x === void 0) return null;
-  return fn(x);
-};
-
-// src/lib/element.ts
-var set = (element) => (attributes) => Object.entries(attributes).forEach(([k, v]) => {
-  if (typeof v === "string") element.setAttribute(k, v);
-  if (typeof v === "number") element.setAttribute(k, `${v}`);
-  if (v === true) element.toggleAttribute(k, v);
-});
-var style = (element) => (style3) => Object.entries(style3).forEach(([k, v]) => {
-  element.style.setProperty(k, v);
-});
-var create = (element) => (attributes) => (...children) => {
-  maybe$1(set(element))(attributes);
-  element.append(...children);
-  return element;
-};
-var html = (env2) => (tag) => (attributes) => (...children) => {
-  const root = create(env2.document.createElement(tag))(attributes)(...children);
-  maybe$1(style(root))(attributes?.style);
-  return root;
-};
-var svg = (env2) => (tag) => create(env2.document.createElementNS("http://www.w3.org/2000/svg", tag));
-
-// src/dom.ts
-var env = new Env();
-var dom_default = html(env);
-var svg2 = svg(env);
-
-const uid = /* @__PURE__ */ (() => {
-  let n = 0;
-  return () => `${Date.now().toString(16)}-${(n++ * 16 ** 4).toString(16).padEnd(4, "0")}`;
-})();
-
-const number = (x) => {
+// src/lib/is.ts
+var number = (x) => {
   if (x.length === 0) return false;
   return !Number.isNaN(parseFloat(x));
 };
 
-const maybe = (fn) => (x) => {
+// src/lib/fn.ts
+var maybe = (fn) => (x) => {
   if (x === null || x === void 0) return null;
   return fn(x);
 };
 
-const childIndex = (child) => Array.from(child.parentElement?.children ?? []).indexOf(child);
-const wrap = (root) => {
-  const wrapper = dom_default("div")()();
+// src/lib/dom.ts
+import h from "@chronocide/dom";
+var childIndex = (child) => Array.from(child.parentElement?.children ?? []).indexOf(child);
+var wrap = (root) => {
+  const wrapper = h("div")()();
   root.parentElement?.insertBefore(wrapper, root);
   wrapper.appendChild(root);
   return wrapper;
 };
 
-const icon = (attributes) => (state) => svg2("svg")({
+// src/lib/components/icon.ts
+import { svg } from "@chronocide/dom";
+var icon = (attributes) => (state) => svg("svg")({
   "xmlns": "http://www.w3.org/2000/svg",
   "class": "icon",
   "viewBox": attributes.viewbox,
@@ -86,39 +34,42 @@ const icon = (attributes) => (state) => svg2("svg")({
   "height": 16,
   "aria-hidden": "true",
   "data-icon": attributes.id
-})(svg2("path")({ d: attributes.d })());
-const chevronLeft = icon({
+})(svg("path")({ d: attributes.d })());
+var chevronLeft = icon({
   id: "chevron-left",
   viewbox: "0 0 320 512",
   d: "M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"
 });
-const chevronRight = icon({
+var chevronRight = icon({
   id: "chevron-right",
   viewbox: "0 0 320 512",
   d: "M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"
 });
-const caretUp = icon({
+var caretUp = icon({
   id: "caret-up",
   viewbox: "0 0 320 512",
   d: "M182.6 137.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8l256 0c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-128-128z"
 });
-const caretDown = icon({
+var caretDown = icon({
   id: "caret-down",
   viewbox: "0 0 320 512",
   d: "M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"
 });
-const magnifyingGlass = icon({
+var magnifyingGlass = icon({
   id: "magnifying-glass",
   viewbox: "0 0 512 512",
   d: "M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
 });
 
-var buttonIcon = (icon) => (id) => (label) => dom_default("button")({
+// src/lib/components/button-icon.ts
+import h2 from "@chronocide/dom";
+var button_icon_default = (icon2) => (id) => (label) => h2("button")({
   "type": "button",
   "aria-controls": id
-})(icon, dom_default("span")({ class: "sr-only" })(label));
+})(icon2, h2("span")({ class: "sr-only" })(label));
 
-class HTMLDatagridElement extends HTMLElement {
+// src/components/datagrid/datagrid.ts
+var HTMLDatagridElement = class extends HTMLElement {
   static observedAttributes = ["data-index"];
   _initialised;
   /** Get active table cell */
@@ -206,7 +157,7 @@ class HTMLDatagridElement extends HTMLElement {
   connectedCallback() {
     if (this._initialised) return;
     this._initialised = true;
-    if (this.id === "") this.id = uid();
+    if (this.id === "") this.id = crypto.randomUUID();
     const rows = this.querySelectorAll("tr");
     rows.forEach((tr, i) => tr.setAttribute("aria-rowindex", `${i + 1}`));
     const table = this.querySelector("table");
@@ -220,7 +171,7 @@ class HTMLDatagridElement extends HTMLElement {
       th.setAttribute("aria-sort", "none");
       const cells2 = Array.from(this.querySelectorAll(`td:nth-child(${i + 1})`));
       th.setAttribute("data-type", cells2.some((cell) => maybe(number)(cell.textContent)) ? "number" : "string");
-      th.replaceChildren(dom_default("button")({
+      th.replaceChildren(h3("button")({
         "type": "button",
         "data-action": "sort",
         "tabindex": i === 0 ? "0" : "-1"
@@ -293,19 +244,19 @@ class HTMLDatagridElement extends HTMLElement {
         }
       }
     });
-    const inputSearch = dom_default("input")({ type: "search", id: `${this.id}-search` })();
-    const buttonSearch = buttonIcon(magnifyingGlass())(`${this.id}-search`)("Search");
+    const inputSearch = h3("input")({ type: "search", id: `${this.id}-search` })();
+    const buttonSearch = button_icon_default(magnifyingGlass())(`${this.id}-search`)("Search");
     const search = () => {
       this._search(inputSearch.value.toLocaleLowerCase());
       this._index = 0;
     };
     inputSearch.addEventListener("change", search, { passive: true });
     buttonSearch.addEventListener("click", search, { passive: true });
-    const selectView = dom_default("select")({ id: `${this.id}-view` })(
-      dom_default("option")({ value: 10 })("10"),
-      dom_default("option")({ value: 25, selected: true })("25"),
-      dom_default("option")({ value: 50 })("50"),
-      dom_default("option")({ value: 0 })("All")
+    const selectView = h3("select")({ id: `${this.id}-view` })(
+      h3("option")({ value: 10 })("10"),
+      h3("option")({ value: 25, selected: true })("25"),
+      h3("option")({ value: 50 })("50"),
+      h3("option")({ value: 0 })("All")
     );
     selectView.addEventListener("change", () => {
       this._paginate(Math.min(this._index, this._max));
@@ -313,34 +264,35 @@ class HTMLDatagridElement extends HTMLElement {
         this.querySelector("table th button")?.setAttribute("tabindex", "0");
       }
     }, { passive: true });
-    this.prepend(dom_default("div")({ class: "toolbar" })(
-      dom_default("div")({ class: "view" })(
-        dom_default("label")({ for: `${this.id}-view` })("Show entries"),
+    this.prepend(h3("div")({ class: "toolbar" })(
+      h3("div")({ class: "view" })(
+        h3("label")({ for: `${this.id}-view` })("Show entries"),
         selectView
       ),
-      dom_default("div")({ class: "search" })(
-        dom_default("label")({ for: `${this.id}-search` })("Search"),
+      h3("div")({ class: "search" })(
+        h3("label")({ for: `${this.id}-search` })("Search"),
         inputSearch,
         buttonSearch
       )
     ));
-    const buttonPrevious = buttonIcon(chevronLeft())(`${this.id}-container`)("Previous");
+    const buttonPrevious = button_icon_default(chevronLeft())(`${this.id}-container`)("Previous");
     buttonPrevious.addEventListener("click", () => {
       this._index -= 1;
     }, { passive: true });
-    const buttonNext = buttonIcon(chevronRight())(`${this.id}-container`)("Next");
+    const buttonNext = button_icon_default(chevronRight())(`${this.id}-container`)("Next");
     buttonNext.addEventListener("click", () => {
       this._index += 1;
     }, { passive: true });
-    this.appendChild(dom_default("div")({ class: "footer" })(
-      dom_default("p")({ class: "status" })(),
-      dom_default("div")({ class: "controls" })(buttonPrevious, buttonNext)
+    this.appendChild(h3("div")({ class: "footer" })(
+      h3("p")({ class: "status" })(),
+      h3("div")({ class: "controls" })(buttonPrevious, buttonNext)
     ));
     this._paginate(0);
   }
   attributeChangedCallback(attribute) {
     if (attribute === "data-index") this._paginate(this._index);
   }
-}
-
-export { HTMLDatagridElement };
+};
+export {
+  HTMLDatagridElement
+};

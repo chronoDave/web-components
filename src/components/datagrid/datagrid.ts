@@ -1,6 +1,5 @@
 import h from '@chronocide/dom';
 
-import { uid } from '../../lib/string.ts';
 import * as is from '../../lib/is.ts';
 import { maybe } from '../../lib/fn.ts';
 import { childIndex, wrap } from '../../lib/dom.ts';
@@ -143,7 +142,7 @@ export class HTMLDatagridElement extends HTMLElement {
     if (this._initialised) return;
     this._initialised = true;
 
-    if (this.id === '') this.id = uid();
+    if (this.id === '') this.id = crypto.randomUUID();
     
     // Attributes
     const rows = this.querySelectorAll('tr');
