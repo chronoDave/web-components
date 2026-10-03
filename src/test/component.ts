@@ -1,7 +1,6 @@
 import fsp from 'fs/promises';
 import path from 'path';
 import esbuild from 'esbuild';
-import h, { env } from '@chronocide/dom';
 import { JSDOM } from 'jsdom';
 import { fileURLToPath } from 'url';
 
@@ -33,11 +32,4 @@ export default async (file: URL) => {
 
     return { window: dom.window, document: dom.window.document };
   };
-};
-
-export const element = () => {
-  const dom = new JSDOM();
-  env.document = dom.window.document;
-
-  return h;
 };

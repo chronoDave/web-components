@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import { maybe } from '../../lib/fn.ts';
 import * as event from '../../test/event.ts';
-import struct from '../../test/struct.ts';
+import struct from '../../test/component.ts';
 
 test('datagrid', async (t: TestContext) => {
   const dom = await struct(new URL('datagrid.struct.html', import.meta.url));
@@ -150,7 +150,7 @@ test('datagrid', async (t: TestContext) => {
     if (!input) t.assert.fail('Missing input');
 
     input.value = 'Os';
-    maybe(event.click(window))(document.querySelector('.search > button'));
+    maybe(event.click(window))(document.querySelector('[name="search"] button'));
 
     t.assert.equal(
       document.querySelectorAll('tbody tr:not([hidden])').length,

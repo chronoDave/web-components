@@ -6,6 +6,8 @@ import { childIndex, wrap } from '../../lib/dom.ts';
 import * as icon from '../../lib/components/icon.ts';
 import buttonIcon from '../../lib/components/button-icon.ts';
 
+import toolbar from './components/toolbar.ts';
+
 type Cell = {
   row: Element | null;
   col: Element | null;
@@ -289,41 +291,29 @@ export class HTMLDatagridElement extends HTMLElement {
       }
     });
 
-    // Search
-    const inputSearch = h('input')({ type: 'search', id: `${this.id}-search` })();
-    const buttonSearch = buttonIcon(icon.magnifyingGlass())(`${this.id}-search`)('Search');
-    const search = () => {
-      this.#search(inputSearch.value.toLocaleLowerCase());
-      this.#index = 0;
-    };
-    inputSearch.addEventListener('change', search, { passive: true });
-    buttonSearch.addEventListener('click', search, { passive: true });
+    this.prepend(toolbar(this.id, {
+      views: [10, 25, 50],
+      search: true
+    }));
+    this.querySelectorAll('option').item(2).setAttribute('selected', 'true');
 
-    // Toolbar
-    const selectView = h('select')({ id: `${this.id}-view` })(
-      h('option')({ value: 10 })('10'),
-      h('option')({ value: 25, selected: true })('25'),
-      h('option')({ value: 50 })('50'),
-      h('option')({ value: 0 })('All')
-    );
-    selectView.addEventListener('change', () => {
+    document.getElementById(`${this.id}-view`)?.addEventListener('change', () => {
       this.#paginate(Math.min(this.#index, this.#max));
 
       if (this.querySelector('table [tabindex="0"]')?.closest('tr')?.hidden) {
         this.querySelector('table th button')?.setAttribute('tabindex', '0');
       }
     }, { passive: true });
-    this.prepend(h('div')({ class: 'toolbar' })(
-      h('div')({ class: 'view' })(
-        h('label')({ for: `${this.id}-view` })('Show entries'),
-        selectView
-      ),
-      h('div')({ class: 'search' })(
-        h('label')({ for: `${this.id}-search` })('Search'),
-        inputSearch,
-        buttonSearch
-      )
-    ));
+
+    const inputSearch = document.querySelector<HTMLInputElement>('[role="toolbar"] [name="search"] input');
+    inputSearch?.addEventListener('change', () => {
+      this.#search(inputSearch.value.toLocaleLowerCase());
+      this.#index = 0;
+    }, { passive: true });
+    document.querySelector('[role="toolbar"] [name="search"] button')?.addEventListener('click', () => {
+      this.#search(inputSearch?.value.toLocaleLowerCase() ?? '');
+      this.#index = 0;
+    }, { passive: true });
 
     // Pagination
     const buttonPrevious = buttonIcon(icon.chevronLeft())(`${this.id}-container`)('Previous');
