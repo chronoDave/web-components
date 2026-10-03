@@ -1,6 +1,6 @@
 import fsp from 'fs/promises';
 import path from 'path';
-import h, { env } from '@chronocide/hyper';
+import h, { env } from '@chronocide/dom';
 import { JSDOM } from 'jsdom';
 import { fileURLToPath } from 'url';
 

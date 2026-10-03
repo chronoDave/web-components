@@ -1,4 +1,4 @@
-import h from '@chronocide/hyper';
+import h from '@chronocide/dom';
 
 export default (icon: SVGElement) =>
   (id: string) =>

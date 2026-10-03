@@ -1,4 +1,4 @@
-import h from '@chronocide/hyper';
+import h from '@chronocide/dom';
 
 import { uid } from '../../lib/string.ts';
 import * as is from '../../lib/is.ts';

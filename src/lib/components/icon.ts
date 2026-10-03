@@ -1,4 +1,4 @@
-import { svg } from '@chronocide/hyper';
+import { svg } from '@chronocide/dom';
 
 export type IconAttributes = {
   id: string;
