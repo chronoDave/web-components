@@ -16,10 +16,10 @@ type Cell = {
 export class HTMLDatagridElement extends HTMLElement {
   static observedAttributes = ['data-index'];
 
-  private _initialised: boolean;
+  #initialised: boolean;
 
   /** Get active table cell */
-  private get _active(): Cell {
+  get #active(): Cell {
     const rows = this.querySelectorAll('tr:not([hidden])');
     const row = document.activeElement?.closest('tr') ?? null;
     const col = 
@@ -35,33 +35,33 @@ export class HTMLDatagridElement extends HTMLElement {
   }
 
   /** Get view size (visible rows) */
-  private get _view() {
+  get #view() {
     const select = document.getElementById(`${this.id}-view`) as HTMLSelectElement | null;
     
     return +(select?.value ?? 0);
   }
 
   /** Get page count */
-  private get _max() {
+  get #max() {
     const rows = this.querySelectorAll('tbody tr:not([data-ignored])');
 
-    return Math.ceil(rows.length / this._view);
+    return Math.ceil(rows.length / this.#view);
   }
 
   /** Get page index */
-  private get _index() {
+  get #index() {
     return +(this.dataset.index ?? 0);
   }
 
   /** Set page index */
-  private set _index(n: number) {
-    if (n >= 0 && n < this._max) this.dataset.index = `${n}`;
+  set #index(n: number) {
+    if (n >= 0 && n < this.#max) this.dataset.index = `${n}`;
   }
 
   /** Change visible rows */
-  private _paginate(i: number) {
-    const min = this._view * i;
-    const max = this._view * (i + 1);
+  #paginate(i: number) {
+    const min = this.#view * i;
+    const max = this.#view * (i + 1);
 
     const rows = this.querySelectorAll('tbody tr:not([data-ignored])');
     rows.forEach((tr, i) => {
@@ -75,7 +75,7 @@ export class HTMLDatagridElement extends HTMLElement {
     if (status) status.textContent = `Showing ${min + 1} to ${Math.min(max, rows.length)} of ${rows.length} entries`;
   }
 
-  private _search(query: string) {
+  #search(query: string) {
     this.querySelectorAll('tbody tr').forEach(tr => {
       const matches = Array.from(tr.querySelectorAll('td'))
         .some(td => td.textContent.toLocaleLowerCase().includes(query));
@@ -85,7 +85,7 @@ export class HTMLDatagridElement extends HTMLElement {
     });
   }
 
-  private _sort(i: number) {
+  #sort(i: number) {
     const buttons = this.querySelectorAll('th > button');
     buttons.forEach(button => {
       button.setAttribute('aria-sort', 'none');
@@ -129,7 +129,7 @@ export class HTMLDatagridElement extends HTMLElement {
   constructor() {
     super();
 
-    this._initialised = false;
+    this.#initialised = false;
   }
 
   connectedCallback() {
@@ -139,8 +139,8 @@ export class HTMLDatagridElement extends HTMLElement {
      * 
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements#lifecycle_callbacks_and_state-preserving_moves
      */
-    if (this._initialised) return;
-    this._initialised = true;
+    if (this.#initialised) return;
+    this.#initialised = true;
 
     if (this.id === '') this.id = crypto.randomUUID();
     
@@ -189,8 +189,8 @@ export class HTMLDatagridElement extends HTMLElement {
         const i = maybe(childIndex)(button.closest('th'));
 
         if (typeof i === 'number') {
-          this._sort(i);
-          this._index = 0;
+          this.#sort(i);
+          this.#index = 0;
         }
       }
     }, { passive: true });
@@ -213,7 +213,7 @@ export class HTMLDatagridElement extends HTMLElement {
 
     table?.addEventListener('keydown', event => {
       const rows = this.querySelectorAll('tr:not([hidden])');
-      const { row, x, y } = this._active;
+      const { row, x, y } = this.#active;
       const focus = maybe(createFocus(event));
 
       /** Move focus to left cell, does not wrap */
@@ -248,9 +248,9 @@ export class HTMLDatagridElement extends HTMLElement {
 
       if (
         event.key === 'PageUp' &&
-        this._index > 0
+        this.#index > 0
       ) {
-        this._index -= 1;
+        this.#index -= 1;
 
         const rows = this.querySelectorAll('tr:not([hidden])');
         focus(rows.item(Math.min(rows.length - 1, y)).children.item(x));
@@ -258,9 +258,9 @@ export class HTMLDatagridElement extends HTMLElement {
 
       if (
         event.key === 'PageDown' &&
-        this._index < this._max - 1
+        this.#index < this.#max - 1
       ) {
-        this._index += 1;
+        this.#index += 1;
 
         const rows = this.querySelectorAll('tr:not([hidden])');
         focus(rows.item(Math.min(rows.length - 1, y)).children.item(x));
@@ -268,7 +268,7 @@ export class HTMLDatagridElement extends HTMLElement {
 
       if (event.key === 'Home') {
         if (event.ctrlKey) {
-          this._index = 0;
+          this.#index = 0;
 
           focus(rows.item(0).children.item(0));
         } else {
@@ -278,7 +278,7 @@ export class HTMLDatagridElement extends HTMLElement {
 
       if (event.key === 'End') {
         if (event.ctrlKey) {
-          this._index = this._max - 1;
+          this.#index = this.#max - 1;
 
           const rows = this.querySelectorAll('tr:not([hidden])');
           const row = rows.item(rows.length - 1);
@@ -293,8 +293,8 @@ export class HTMLDatagridElement extends HTMLElement {
     const inputSearch = h('input')({ type: 'search', id: `${this.id}-search` })();
     const buttonSearch = buttonIcon(icon.magnifyingGlass())(`${this.id}-search`)('Search');
     const search = () => {
-      this._search(inputSearch.value.toLocaleLowerCase());
-      this._index = 0;
+      this.#search(inputSearch.value.toLocaleLowerCase());
+      this.#index = 0;
     };
     inputSearch.addEventListener('change', search, { passive: true });
     buttonSearch.addEventListener('click', search, { passive: true });
@@ -307,7 +307,7 @@ export class HTMLDatagridElement extends HTMLElement {
       h('option')({ value: 0 })('All')
     );
     selectView.addEventListener('change', () => {
-      this._paginate(Math.min(this._index, this._max));
+      this.#paginate(Math.min(this.#index, this.#max));
 
       if (this.querySelector('table [tabindex="0"]')?.closest('tr')?.hidden) {
         this.querySelector('table th button')?.setAttribute('tabindex', '0');
@@ -328,11 +328,11 @@ export class HTMLDatagridElement extends HTMLElement {
     // Pagination
     const buttonPrevious = buttonIcon(icon.chevronLeft())(`${this.id}-container`)('Previous');
     buttonPrevious.addEventListener('click', () => {
-      this._index -= 1;
+      this.#index -= 1;
     }, { passive: true });
     const buttonNext = buttonIcon(icon.chevronRight())(`${this.id}-container`)('Next');
     buttonNext.addEventListener('click', () => {
-      this._index += 1;
+      this.#index += 1;
     }, { passive: true });
 
     // Footer
@@ -341,10 +341,10 @@ export class HTMLDatagridElement extends HTMLElement {
       h('div')({ class: 'controls' })(buttonPrevious, buttonNext)
     ));
 
-    this._paginate(0);
+    this.#paginate(0);
   }
 
   attributeChangedCallback(attribute: string) {
-    if (attribute === 'data-index') this._paginate(this._index);
+    if (attribute === 'data-index') this.#paginate(this.#index);
   }
 }
